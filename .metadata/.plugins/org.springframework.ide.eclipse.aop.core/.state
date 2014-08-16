@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<aop-reference-model>
+<aop-project name="MVC"/>
+<aop-project name="gs-rest-service-complete"/>
+<aop-project name="PersonalFinancialServices"/>
+<aop-project name="gs-rest-service-initial"/>
+</aop-reference-model>

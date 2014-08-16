@@ -1,0 +1,54 @@
+package com.rest.ws.services;
+
+import java.io.InputStream;
+import java.util.List;
+
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+
+import com.rest.model.Customer;
+@Path("/customers")
+public interface CustomerResource {
+
+	@POST
+	@Consumes("application/xml")
+	public abstract Response createCustomer(InputStream is);
+
+	@GET
+	@Path("{id}")
+	@Produces("application/xml")
+	public abstract StreamingOutput getCustomer(@PathParam("id") int id);
+
+	@GET
+	@Path("/jaxb/{id}")
+	@Produces("application/xml")
+	public abstract Customer getCustomerJaxB(@PathParam("id") int id);
+	
+	@POST
+	@Path("/json")
+	@Consumes("application/json")
+	public abstract Response createCustomerJson(Customer customer);
+	
+	@GET
+	@Path("/json/{id}")
+	@Produces("application/json")
+	public abstract Customer getCustomerJson(@PathParam("id") int id);
+	
+	@GET
+	@Path("/json/all")
+	@Produces("application/json")
+	public abstract List<Customer> getCustomersJson();
+	
+	@PUT
+	@Path("{id}")
+	@Consumes("application/xml")
+	public abstract void updateCustomer(@PathParam("id") int id, InputStream is);
+
+}

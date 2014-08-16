@@ -1,0 +1,8 @@
+#Tomcat publish data
+#Sat Aug 16 18:59:34 EST 2014
+org.eclipse.jst.jee.server\:MVC=/Users/prasong/springsource/vfabric-tc-server-developer-2.9.5.SR1/base-instance/wtpwebapps/MVC
+org.eclipse.jst.jee.server\:rest=/Users/prasong/springsource/vfabric-tc-server-developer-2.9.5.SR1/base-instance/wtpwebapps/rest
+org.eclipse.jst.jee.server\:PersonalFinancialUI=/Users/prasong/springsource/vfabric-tc-server-developer-2.9.5.SR1/base-instance/wtpwebapps/PersonalFinancialUI
+org.eclipse.jst.jee.server\:PersonalFinancialServices=/Users/prasong/springsource/vfabric-tc-server-developer-2.9.5.SR1/base-instance/wtpwebapps/PersonalFinancialServices
+org.eclipse.jst.j2ee.server\:PersonalFinancialModels=/Users/prasong/springsource/vfabric-tc-server-developer-2.9.5.SR1/base-instance/wtpwebapps/PersonalFinancialServices/WEB-INF/lib/PersonalFinancialModels-0.0.1-SNAPSHOT.jar
+org.eclipse.jst.j2ee.server\:ShareModels=/Users/prasong/springsource/vfabric-tc-server-developer-2.9.5.SR1/base-instance/wtpwebapps/MVC/WEB-INF/lib/ShareModels-0.0.1-SNAPSHOT.jar

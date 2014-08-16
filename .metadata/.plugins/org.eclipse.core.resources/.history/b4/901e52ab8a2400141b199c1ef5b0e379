@@ -1,0 +1,251 @@
+package com.rest.ws.services.impl;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.net.URI;
+import java.util.Calendar;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import javax.ws.rs.PathParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
+import com.rest.model.Customer;
+import com.rest.ws.services.CustomerResource;
+
+
+public class CustomerResourceImpl implements CustomerResource {
+	private static TreeMap<Calendar, Map<Integer, Customer>> swapCustomerDB = new TreeMap<Calendar, Map<Integer, Customer>>();
+	private static final ReadWriteLock  readWriteLock = new ReentrantReadWriteLock();
+	//private Map<Integer, Customer> customerDB = new ConcurrentHashMap<Integer, Customer>();
+	private static Map<Integer, Customer> getCurrentCustomerDB()
+	{
+		readWriteLock.readLock().lock();
+		Map<Integer, Customer> retMap = null;
+		try{
+			if(swapCustomerDB.size() > 0)
+			{
+				retMap = swapCustomerDB.lastEntry().getValue();
+			}
+		}finally{
+			readWriteLock.readLock().unlock();
+		}
+		return retMap;
+	}
+	private AtomicInteger idCounter = new AtomicInteger();
+	
+	static {
+		new Runnable(){
+
+			@Override
+			public void run() {
+				while(true)
+				{
+					try {
+						
+						readWriteLock.writeLock().lock();
+						try{
+							if(swapCustomerDB.size() > 1)
+							{
+								Entry<Calendar, Map<Integer, Customer>> lastEntry = swapCustomerDB.pollLastEntry();
+								swapCustomerDB.clear();
+								swapCustomerDB.put(lastEntry.getKey(), lastEntry.getValue());
+							}
+							
+						}finally{
+							readWriteLock.writeLock().unlock();
+						}
+						System.out.println("Cleanup " + Thread.currentThread().toString());
+						Thread.sleep(300000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				
+			}
+			
+		}.run();
+		for (int i=0; i<10 ; i++) {
+			new Runnable(){
+
+				@Override
+				public void run() {
+					while(true)
+					{
+						try {
+							
+							readWriteLock.writeLock().lock();
+							try{
+								Entry<Calendar, Map<Integer, Customer>> lastEntry = swapCustomerDB.lastEntry();
+								Map<Integer, Customer> newCustomerDB = new ConcurrentHashMap<Integer, Customer>();
+								if(lastEntry != null)
+								{
+									newCustomerDB = new ConcurrentHashMap<Integer, Customer>(swapCustomerDB.lastEntry().getValue());
+								}
+								swapCustomerDB.put(Calendar.getInstance(), newCustomerDB);
+								
+							}finally{
+								readWriteLock.writeLock().unlock();
+							}
+							System.out.println("Add "+Thread.currentThread().toString());
+							Thread.sleep(300000);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						
+					}
+					
+				}
+				
+			}.run();
+		}
+	}
+	/* (non-Javadoc)
+	 * @see com.rest.ws.services.CustomerResourceInf#createCustomer(java.io.InputStream)
+	 */
+	@Override
+	public Response createCustomer(InputStream is) {
+		Customer customer = readCustomer(is);
+		customer.setId(idCounter.incrementAndGet());
+		getCurrentCustomerDB().put(customer.getId(), customer);
+		System.out.println("Created customer " + customer.getId());
+		return Response.created(URI.create("/customers/" + customer.getId()))
+				.build();
+	}
+
+	/* (non-Javadoc)
+	 * @see com.rest.ws.services.CustomerResourceInf#getCustomer(int)
+	 */
+	@Override
+	public StreamingOutput getCustomer(@PathParam("id") int id) {
+		final Customer customer = getCurrentCustomerDB().get(id);
+		if (customer == null) {
+			throw new WebApplicationException(Response.Status.NOT_FOUND);
+		}
+		return new StreamingOutput() {
+
+			@Override
+			public void write(OutputStream outputStream) throws IOException,
+					WebApplicationException {
+				outputCustomer(outputStream, customer);
+
+			}
+		};
+	}
+
+	/* (non-Javadoc)
+	 * @see com.rest.ws.services.CustomerResourceInf#updateCustomer(int, java.io.InputStream)
+	 */
+	@Override
+	public void updateCustomer(@PathParam("id") int id, InputStream is) {
+		Customer update = readCustomer(is);
+		Customer current = getCurrentCustomerDB().get(id);
+		if (current == null)
+			throw new WebApplicationException(Response.Status.NOT_FOUND);
+		current.setFirstName(update.getFirstName());
+		current.setLastName(update.getLastName());
+		current.getAddress().setStreet(update.getAddress().getStreet());
+		current.getAddress().setState(update.getAddress().getState());
+		current.getAddress().setZip(update.getAddress().getZip());
+		current.getAddress().setCountry(update.getAddress().getCountry());
+	}
+
+	protected void outputCustomer(OutputStream os, Customer cust)
+			throws IOException {
+		PrintStream writer = new PrintStream(os);
+		writer.println("<customer id=\"" + cust.getId() + "\">");
+		writer.println(" <first-name>" + cust.getFirstName() + "</first-name>");
+		writer.println(" <last-name>" + cust.getLastName() + "</last-name>");
+		writer.println(" <street>" + cust.getAddress().getStreet() + "</street>");
+		writer.println("<city>" + cust.getAddress().getCity() + "</city>");
+		writer.println("<state>" + cust.getAddress().getState() + "</state>");
+		writer.println("<zip>" + cust.getAddress().getZip() + "</zip>");
+		writer.println("<country>" + cust.getAddress().getCountry() + "</country>");
+		writer.println("</customer>");
+	}
+
+	protected Customer readCustomer(InputStream is) {
+		try {
+			DocumentBuilder builder = DocumentBuilderFactory.newInstance()
+					.newDocumentBuilder();
+			Document doc = builder.parse(is);
+			Element root = doc.getDocumentElement();
+			Customer cust = new Customer();
+			if (root.getAttribute("id") != null
+					&& !root.getAttribute("id").trim().equals("")) {
+				cust.setId(Integer.valueOf(root.getAttribute("id")));
+			}
+			NodeList nodes = root.getChildNodes();
+			for (int i = 0; i < nodes.getLength(); i++) {
+				if(nodes.item(i) instanceof Element)
+				{
+				Element element = (Element) nodes.item(i);
+					if (element.getTagName().equals("first-name")) {
+						cust.setFirstName(element.getTextContent());
+					} else if (element.getTagName().equals("last-name")) {
+						cust.setLastName(element.getTextContent());
+					} else if (element.getTagName().equals("street")) {
+						cust.getAddress().setStreet(element.getTextContent());
+					} else if (element.getTagName().equals("city")) {
+						cust.getAddress().setCity(element.getTextContent());
+					} else if (element.getTagName().equals("state")) {
+						cust.getAddress().setState(element.getTextContent());
+					} else if (element.getTagName().equals("zip")) {
+						cust.getAddress().setZip(element.getTextContent());
+					} else if (element.getTagName().equals("country")) {
+						cust.getAddress().setCountry(element.getTextContent());
+					}
+				}
+			}
+			return cust;
+		} catch (Exception e) {
+			throw new WebApplicationException(e, Response.Status.BAD_REQUEST);
+		}
+	}
+
+	@Override
+	public Customer getCustomerJaxB(@PathParam("id") int id) {
+		final Customer customer = getCurrentCustomerDB().get(id);
+		if (customer == null) {
+			throw new WebApplicationException(Response.Status.NOT_FOUND);
+		}
+		return customer;
+	}
+
+	@Override
+	public Customer getCustomerJson(@PathParam("id") int id) {
+		// TODO Auto-generated method stub
+		final Customer customer = getCurrentCustomerDB().get(id);
+		if (customer == null) {
+			throw new WebApplicationException(Response.Status.NOT_FOUND);
+		}
+		return customer;
+	}
+
+	@Override
+	public Response createCustomerJson(Customer customer) {
+		// TODO Auto-generated method stub
+		customer.setId(idCounter.incrementAndGet());
+		getCurrentCustomerDB().put(customer.getId(), customer);
+		return Response.created(URI.create("/customers/" + customer.getId()))
+				.build();
+	}
+	
+}

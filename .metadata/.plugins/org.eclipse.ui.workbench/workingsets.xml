@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<workingSetManager>
+<workingSet editPageId="org.eclipse.jdt.ui.JavaWorkingSetPage" factoryID="org.eclipse.ui.internal.WorkingSetFactory" id="1397726767587_1" label="UI" name="UI"/>
+<workingSet editPageId="org.eclipse.jdt.ui.JavaWorkingSetPage" factoryID="org.eclipse.ui.internal.WorkingSetFactory" id="1397972549241_2" label="PersonalFinancial" name="PersonalFinancial">
+<item elementID="=PersonalFinancialServices" factoryID="org.eclipse.jdt.ui.PersistableJavaElementFactory"/>
+<item elementID="=PersonalFinancialModels" factoryID="org.eclipse.jdt.ui.PersistableJavaElementFactory"/>
+<item elementID="=PersonalFinancialUI" factoryID="org.eclipse.jdt.ui.PersistableJavaElementFactory"/>
+</workingSet>
+<workingSet aggregate="true" factoryID="org.eclipse.ui.internal.WorkingSetFactory" id="1397725285870_0" label="Window Working Set" name="Aggregate for window 1397725285869"/>
+<workingSet aggregate="true" factoryID="org.eclipse.ui.internal.WorkingSetFactory" id="1397974614112_4" label="Multiple Working Sets" name="Aggregate:PersonalFinancial:UI:">
+<workingSet IMemento.internal.id="PersonalFinancial"/>
+<workingSet IMemento.internal.id="UI"/>
+</workingSet>
+<mruList name="PersonalFinancial"/>
+<mruList name="UI"/>
+</workingSetManager>
